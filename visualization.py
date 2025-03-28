@@ -22,6 +22,7 @@ class MovieDataVisualizer:
         plt.xlabel("Number of Ratings")
         plt.ylabel("Movie")
         plt.title("Movies with the Highest Number of Ratings")
+        plt.tight_layout()  # Ensure full labels are visible
         plt.show()
 
     def plot_movie_ratings(self):
@@ -60,6 +61,7 @@ class MovieDataVisualizer:
         sns.barplot(y=worst_movies["title"], x=worst_movies["rating"], ax=ax[1], palette="Reds")
         ax[1].set_title("Movies with the Lowest Ratings")
 
+        plt.tight_layout()  # Ensure full labels are visible
         plt.show()
 
     def plot_rating_distribution(self):
@@ -83,7 +85,7 @@ class MovieDataVisualizer:
         plt.title("Rating Distribution")
         plt.xlabel("Rating")
         plt.ylabel("Count")
-        plt.tight_layout()
+        plt.tight_layout()  # Ensure full labels are visible
         plt.show()
 
     def plot_top_users(self):
@@ -96,6 +98,7 @@ class MovieDataVisualizer:
         plt.xlabel("User")
         plt.ylabel("Number of Ratings")
         plt.title("Top 10 Users by Number of Ratings")
+        plt.tight_layout()  # Ensure full labels are visible
         plt.show()
 
     def plot_user_types(self):
@@ -124,6 +127,5 @@ class MovieDataVisualizer:
         plt.xlabel("User Type")
         plt.ylabel("Number of Users")
         plt.title("Distribution of Users by Rating Behavior")
+        plt.tight_layout()  # Ensure full labels are visible
         plt.show()
-
-

@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from joblib import Parallel, delayed
 from sklearn.metrics import mean_squared_error, mean_absolute_error, precision_recall_fscore_support
+from datetime import datetime
 
 def get_data(path="data\\rawdata\\", N=10_000):
     """
@@ -41,11 +42,16 @@ def get_data(path="data\\rawdata\\", N=10_000):
 
     return ratings, movies
 
-def get_test_ds(ratings, output_ratings_file="data\\modified_ratings_10k.csv", output_indices_file="data\\removed_indices_10k.csv"):
+def get_test_ds(ratings, generate_new=False, fileName="data\\modified_ratings.csv",
+                output_ratings_file="data\\modified_ratings", output_indices_file="data\\removed_indices"):
     """
     Removes 20% of ratings from 20% of random users who have rated at least 12 movies.
     Saves the updated DataFrame and the pairs of removed userId-movieId to files.
     """
+    
+    if not generate_new:
+        return pd.read_csv(fileName)
+    
     # Group by userId and count the number of ratings for each user
     user_rating_counts = ratings.groupby("userId").size()
 
@@ -75,52 +81,56 @@ def get_test_ds(ratings, output_ratings_file="data\\modified_ratings_10k.csv", o
     # Extract userId and movieId for the removed indices
     removed_pairs = ratings.loc[removed_indices, ["userId", "movieId"]]
 
-    # Save the updated DataFrame and the pairs of removed userId-movieId
-    modified_ratings.to_csv(output_ratings_file, index=False)
-    removed_pairs.to_csv(output_indices_file, index=False)
 
-    print(f"Modified ratings saved to {output_ratings_file}")
-    print(f"Removed userId-movieId pairs saved to {output_indices_file}")
+    date_str = datetime.now().strftime("%Y%m%d")
+    # Save the updated DataFrame and the pairs of removed userId-movieId
+    modified_ratings.to_csv(f"{output_ratings_file}_{date_str}.csv", index=False)
+    removed_pairs.to_csv(f"{output_indices_file}_{date_str}.csv", index=False)
+
+    print(f"Modified ratings saved to {output_ratings_file}_{date_str}.csv")
+    print(f"Removed userId-movieId pairs saved to {output_indices_file}_{date_str}.csv")
+
+    return modified_ratings
 
 
 def evaluate_predictions(real_matrix, predicted_matrix, removed_indexes_file, threshold=3.5):
     """
-    Считает RMSE, MAE, Precision, Recall и F1-score на основе реальных и предсказанных оценок.
+    Calculates RMSE, MAE, Precision, Recall, and F1-score based on real and predicted ratings.
     
-    :param real_matrix: csr_matrix – реальная user-movie матрица
-    :param predicted_matrix: csr_matrix – предсказанная user-movie матрица
-    :param ratings_file: str – путь к файлу ratings.xlsx
-    :param removed_indexes_file: str – путь к файлу removed_indexes.csv
-    :param threshold: float – порог для положительных оценок
-    :return: словарь с метриками
+    :param real_matrix: csr_matrix – real user-movie matrix
+    :param predicted_matrix: csr_matrix – predicted user-movie matrix
+    :param removed_indexes_file: str – path to the removed_indexes.csv file
+    :param threshold: float – threshold for positive ratings
+    :return: dictionary with metrics
     """
 
-    # Загружаем индексы предсказанных значений
-    removed_indexes = pd.read_csv(removed_indexes_file)  # Changed from read_excel to read_csv
+    # Load the indices of predicted values
+    removed_indexes = pd.read_csv(removed_indexes_file)
 
-    # Извлекаем нужные userId и movieId (предсказанные оценки)
+    # Extract the required userId and movieId (predicted ratings)
     removed_users = removed_indexes['userId'].values
     removed_movies = removed_indexes['movieId'].values
 
-    # Фильтруем реальную и предсказанную матрицу
+    # Filter the real and predicted matrices
     y_true, y_pred = [], []
 
     for user, movie in zip(removed_users, removed_movies):
         real_rating = real_matrix[user, movie]
         predicted_rating = predicted_matrix[user, movie]
 
-        if real_rating > 0:  # Если есть реальная оценка
+        if real_rating > 0:  # If there is a real rating
             y_true.append(real_rating)
             y_pred.append(predicted_rating)
 
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
-    # Считаем метрики
-    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    # Calculate metrics
+    rmse = mean_squared_error(y_true, y_pred, squared=False)
     mae = mean_absolute_error(y_true, y_pred)
 
-    # Для Precision / Recall считаем, какие фильмы "позитивные" (больше порога)
+    # For Precision / Recall, determine which movies are "positive" (above the threshold),
+    # meaning the user rated them highly in reality and we recommended them in the prediction
     y_true_bin = (y_true >= threshold).astype(int)
     y_pred_bin = (y_pred >= threshold).astype(int)
 

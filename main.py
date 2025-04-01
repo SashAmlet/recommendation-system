@@ -16,8 +16,10 @@ testing_ratings =  get_test_ds(real_ratings, generate_new=False)
 # visualizer.plot_user_types()
 
 recommendation = MovieRecommender(real_ratings, testing_ratings)
-recommendation.train(method = "MatrixFactorization", generate_new=False)
+recommendation.train(method = "ALS", generate_new=True, filename="data\\predicted_ratings_SVD.npz")
 
 result = evaluate_predictions(recommendation.real_user_movie, recommendation.predicted_user_movie, "data\\removed_indices.csv")
 
 print(result)
+
+recommendation.recommend_movies()

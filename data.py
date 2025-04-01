@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from joblib import Parallel, delayed
-from sklearn.metrics import mean_squared_error, mean_absolute_error, precision_recall_fscore_support
+from sklearn.metrics import root_mean_squared_error, mean_absolute_error, precision_recall_fscore_support
 from datetime import datetime
 
 def get_data(path="data\\rawdata\\", N=10_000):
@@ -126,7 +126,7 @@ def evaluate_predictions(real_matrix, predicted_matrix, removed_indexes_file, th
     y_pred = np.array(y_pred)
 
     # Calculate metrics
-    rmse = mean_squared_error(y_true, y_pred, squared=False)
+    rmse = root_mean_squared_error(y_true, y_pred)
     mae = mean_absolute_error(y_true, y_pred)
 
     # For Precision / Recall, determine which movies are "positive" (above the threshold),
